@@ -6,10 +6,16 @@
 #pragma once
 
 #include "targetver.h"
-
-#include <stdio.h>
+#include <Windows.h>
 #include <tchar.h>
+#include <fstream>
+#include <string>
+#include <iostream>
 
+using namespace std;
 
+#include "ServiceInstaller.h"
+#include "ServiceBase.h"
+#include "ServiceInstaller.h"
 
 // TODO: reference additional headers your program requires here
