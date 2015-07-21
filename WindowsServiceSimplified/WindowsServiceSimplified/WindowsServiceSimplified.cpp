@@ -1,8 +1,11 @@
 
 #include "stdafx.h"
 
+/// structure contains status information for a service
 SERVICE_STATUS        g_ServiceStatus = { 0 };
+/// handle to the status information structure for the current service.
 SERVICE_STATUS_HANDLE g_StatusHandle = NULL;
+/// handle for a stop event
 HANDLE                g_ServiceStopEvent = INVALID_HANDLE_VALUE;
 
 VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv);
@@ -13,13 +16,16 @@ DWORD WINAPI ServiceWorkerThread(LPVOID lpParam);
 
 int _tmain(int argc, TCHAR *argv[])
 {
-
+	/// Structure that specifies the ServiceMain function for a service that can run in the calling process
+	/// It is used by the StartServiceCtrlDispatcher function
 	SERVICE_TABLE_ENTRY ServiceTable[] =
 	{
 		{ SERVICE_NAME, (LPSERVICE_MAIN_FUNCTION)ServiceMain },
 		{ NULL, NULL }
 	};
 
+	/// Connects the main thread of a service process to the service control manager, 
+	/// which causes the thread to be the service control dispatcher thread for the calling process
 	if (StartServiceCtrlDispatcher(ServiceTable) == FALSE)
 	{
 		return GetLastError();
@@ -28,19 +34,19 @@ int _tmain(int argc, TCHAR *argv[])
 	return 0;
 }
 
-
+/// The entry point for a service.
 VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 {
 	DWORD Status = E_FAIL;
-
+	/// Registers a function to handle service control requests.
 	g_StatusHandle = RegisterServiceCtrlHandler(SERVICE_NAME, ServiceCtrlHandler);
 
 	if (g_StatusHandle == NULL)
 	{
-		goto EXIT;
+		return;
 	}
 
-	// Tell the service controller we are starting
+	/// Informing the smc that the service is starting
 	ZeroMemory(&g_ServiceStatus, sizeof(g_ServiceStatus));
 	g_ServiceStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
 	g_ServiceStatus.dwControlsAccepted = 0;
@@ -49,123 +55,81 @@ VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 	g_ServiceStatus.dwServiceSpecificExitCode = 0;
 	g_ServiceStatus.dwCheckPoint = 0;
 
-	/*
-	* Perform tasks neccesary to start the service here
-	*/
-	OutputDebugString(_T("My Sample Service: ServiceMain: Performing Service Start Operations"));
-
-	// Create stop event to wait on later.
+	/// Creating the stop event
 	g_ServiceStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	/// if SetServiceStatus returned error
 	if (g_ServiceStopEvent == NULL)
 	{
-		OutputDebugString(_T("My Sample Service: ServiceMain: CreateEvent(g_ServiceStopEvent) returned error"));
-
 		g_ServiceStatus.dwControlsAccepted = 0;
 		g_ServiceStatus.dwCurrentState = SERVICE_STOPPED;
 		g_ServiceStatus.dwWin32ExitCode = GetLastError();
 		g_ServiceStatus.dwCheckPoint = 1;
-
-		if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE)
-		{
-			OutputDebugString(_T("My Sample Service: ServiceMain: SetServiceStatus returned error"));
-		}
-		goto EXIT;
+		SetServiceStatus(g_StatusHandle, &g_ServiceStatus);
+		return;
 	}
 
-	// Tell the service controller we are started
+	/// Informing the smc that the service started
 	g_ServiceStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP;
 	g_ServiceStatus.dwCurrentState = SERVICE_RUNNING;
 	g_ServiceStatus.dwWin32ExitCode = 0;
 	g_ServiceStatus.dwCheckPoint = 0;
+	SetServiceStatus(g_StatusHandle, &g_ServiceStatus);
 
-	if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE)
-	{
-		OutputDebugString(_T("My Sample Service: ServiceMain: SetServiceStatus returned error"));
-	}
-
-	// Start the thread that will perform the main task of the service
+	/// Starting the  worker thread
 	HANDLE hThread = CreateThread(NULL, 0, ServiceWorkerThread, NULL, 0, NULL);
 
-	OutputDebugString(_T("My Sample Service: ServiceMain: Waiting for Worker Thread to complete"));
-
-	// Wait until our worker thread exits effectively signaling that the service needs to stop
+	// Waiting for worker thread exit signal
 	WaitForSingleObject(hThread, INFINITE);
 
-	OutputDebugString(_T("My Sample Service: ServiceMain: Worker Thread Stop Event signaled"));
-
-
-	/*
-	* Perform any cleanup tasks
-	*/
-	OutputDebugString(_T("My Sample Service: ServiceMain: Performing Cleanup Operations"));
-
+	/// Cleanup
 	CloseHandle(g_ServiceStopEvent);
 
 	g_ServiceStatus.dwControlsAccepted = 0;
 	g_ServiceStatus.dwCurrentState = SERVICE_STOPPED;
 	g_ServiceStatus.dwWin32ExitCode = 0;
 	g_ServiceStatus.dwCheckPoint = 3;
+	SetServiceStatus(g_StatusHandle, &g_ServiceStatus);
 
-	if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE)
-	{
-		OutputDebugString(_T("My Sample Service: ServiceMain: SetServiceStatus returned error"));
-	}
-
-EXIT:
-	OutputDebugString(_T("My Sample Service: ServiceMain: Exit"));
-
-	return;
 }
 
-
+/// Controller for the service, managing the stop operation
 VOID WINAPI ServiceCtrlHandler(DWORD CtrlCode)
 {
-	OutputDebugString(_T("My Sample Service: ServiceCtrlHandler: Entry"));
-
 	switch (CtrlCode)
 	{
 	case SERVICE_CONTROL_STOP:
-
-		OutputDebugString(_T("My Sample Service: ServiceCtrlHandler: SERVICE_CONTROL_STOP Request"));
-
+	{
 		if (g_ServiceStatus.dwCurrentState != SERVICE_RUNNING)
 			break;
 
-		/*
-		* Perform tasks neccesary to stop the service here
-		*/
-
+		/// Stopping the service
 		g_ServiceStatus.dwControlsAccepted = 0;
 		g_ServiceStatus.dwCurrentState = SERVICE_STOP_PENDING;
 		g_ServiceStatus.dwWin32ExitCode = 0;
 		g_ServiceStatus.dwCheckPoint = 4;
+		SetServiceStatus(g_StatusHandle, &g_ServiceStatus);
 
-		if (SetServiceStatus(g_StatusHandle, &g_ServiceStatus) == FALSE)
-		{
-			OutputDebugString(_T("My Sample Service: ServiceCtrlHandler: SetServiceStatus returned error"));
-		}
-
-		// This will signal the worker thread to start shutting down
+		/// Signalling the worker thread to shut down
 		SetEvent(g_ServiceStopEvent);
 
 		break;
-
-	default:
-		break;
 	}
 
-	OutputDebugString(_T("My Sample Service: ServiceCtrlHandler: Exit"));
+	default:
+	{
+		break;
+	}
+	}
+
 }
 
-
+/// ServiceWorkerThread function starts writing the timestamp to a file every 3 seconds
 DWORD WINAPI ServiceWorkerThread(LPVOID lpParam)
 {
-	OutputDebugString(_T("My Sample Service: ServiceWorkerThread: Entry"));
-	
 	FileWorker file;
 	file.writeInit();
 
-	//  Periodically check if the service has been requested to stop
+	///  Checking if the services has issued a stop request
 	while (WaitForSingleObject(g_ServiceStopEvent, 0) != WAIT_OBJECT_0)
 	{
 		Sleep(3000);
@@ -173,8 +137,5 @@ DWORD WINAPI ServiceWorkerThread(LPVOID lpParam)
 	}
 
 	file.wirteEnd();
-
-	OutputDebugString(_T("My Sample Service: ServiceWorkerThread: Exit"));
-
 	return ERROR_SUCCESS;
 }

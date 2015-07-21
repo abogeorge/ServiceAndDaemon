@@ -17,4 +17,3 @@
 using namespace std;
 
 #include "FileWorker.h"
-
