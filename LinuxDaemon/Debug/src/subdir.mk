@@ -5,15 +5,15 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 CPP_SRCS += \
 ../src/FileWorker.cpp \
-../src/LinuxDeamonSimplified.cpp 
+../src/LinuxDaemon.cpp 
 
 OBJS += \
 ./src/FileWorker.o \
-./src/LinuxDeamonSimplified.o 
+./src/LinuxDaemon.o 
 
 CPP_DEPS += \
 ./src/FileWorker.d \
-./src/LinuxDeamonSimplified.d 
+./src/LinuxDaemon.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

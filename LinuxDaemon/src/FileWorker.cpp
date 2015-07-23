@@ -11,7 +11,7 @@ FileWorker::~FileWorker()
 {
 }
 
-char * path = "//home//abo//Work//Projects//LinuxDeamonSimplified//Test//log.txt";
+char * path = "//home//abo//Work//Projects//LinuxDaemon//Test//log.txt";
 
 void FileWorker::writeInit()
 {
@@ -30,7 +30,7 @@ void FileWorker::writeContent()
 	out.seekp(0, ios::end);
 	out << "\nStill runing: " << getTime();
 	out.close();
-	sleep(3000);
+	//sleep(3000);
 }
 
 
