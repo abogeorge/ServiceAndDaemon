@@ -9,7 +9,7 @@ int main()
 	#ifdef _WIN32
 	WindowsService wSvc;
 	wSvc.ServiceEntry();
-	#elif _linux__
+	#elif linux
 	LinuxDaemon lDmn;
 	lDmn.DaemonEntry();
 	#endif

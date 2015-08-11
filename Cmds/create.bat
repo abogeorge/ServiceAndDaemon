@@ -41,7 +41,7 @@ EXIT /B
 
 :CASE_1
 
-sc create %servicename% binPath= "D:\Projects\ServiceAndDaemon\WLServiceDaemon\Debug\WLServiceDaemon.exe"
+sc create %servicename% binPath= "D:\Projects\ServiceAndDaemon\Runs\WLServiceDaemon.exe"
 GOTO CASE_init
 :CASE_2
 sc start %servicename%

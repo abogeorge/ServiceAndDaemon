@@ -17,7 +17,7 @@ LinuxDaemon::~LinuxDaemon()
 
 int LinuxDaemon::DaemonEntry()
 {
-	#ifdef _linux__
+	#ifdef linux
 	/// Process ID and Session ID
 	pid_t pid, sid;
 
@@ -50,7 +50,7 @@ int LinuxDaemon::DaemonEntry()
 	close(STDERR_FILENO);
 
 	// calling process function
-	process();
+	Process();
 
 	exit(EXIT_SUCCESS);
 	return 0;

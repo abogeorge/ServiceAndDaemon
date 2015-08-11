@@ -3,7 +3,7 @@
 
 #ifdef _WIN32
 char * path = "D:\\Projects\\ServiceAndDaemon\\Tests\\log.txt";
-#elif _linux__
+#elif linux
 char * path = "//home//abo//Work//Projects//LinuxDaemon//Test//log.txt";
 #endif
 
@@ -36,7 +36,7 @@ void FileWorker::writeContent()
 	out.close();
 	#ifdef _WIN32
 	Sleep(1000);
-	#elif _linux__
+	#elif linux
 	sleep(1);
 	#endif
 }

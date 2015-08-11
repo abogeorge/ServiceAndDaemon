@@ -15,7 +15,7 @@ using namespace std;
 #include <string>
 #include <Windows.h>
 #include "WindowsService.h"
-#elif _linux__
+#elif linux
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/stat.h>
